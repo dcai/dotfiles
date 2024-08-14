@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ ! -f $(which pygmentize) ]]; then
+    # if pygmentize not installed, use raw cat
+    /bin/cat $@
+else
+    # pip install --user Pygments
+    # html output: pygmentize -f html -O full,style=vim
+    pygmentize -O style=native -f console256 -g $@
+fi

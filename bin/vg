@@ -1,0 +1,16 @@
+#!/bin/sh
+INDEX_FILE=/tmp/search.list
+BASENAME=$(basename "$0")
+
+if [ $# -ne 1 ]; then
+    echo "Usage: ${BASENAME} [index]"
+    exit 1
+fi
+
+LNUM=$(echo "$1" | tr 'a-j' '0-9')
+CMD="sed -n '$LNUM'p ${INDEX_FILE}"
+
+ARGS=$(eval "$CMD" | awk -F: '{print " +"$2 " " $1}')
+CMD="$EDITOR $ARGS"
+echo "> $CMD"
+eval "$CMD"

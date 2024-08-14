@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. lib.bash
+
+# ROOT=$(git rev-parse --show-toplevel)
+ROOT=$(find_project_root "package.json")
+PACKAGEJSON=$ROOT/package.json
+
+jq -r '.dependencies | to_entries[] | "\(.key)@\(.value)"' "${PACKAGEJSON}"

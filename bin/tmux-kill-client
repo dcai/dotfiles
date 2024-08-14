@@ -1,0 +1,3 @@
+#!/bin/bash
+
+tmux detach-client -t $(tmux list-clients | fzf | awk 'BEGIN { FS = ":" };{print $1}')

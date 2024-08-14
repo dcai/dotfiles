@@ -1,0 +1,7 @@
+#!/bin/bash
+HOST="localhost"
+USER=sca-developer
+PASS="nNczMJFPMXQKH9v3"
+kubectl get pods --no-headers $@ |
+    fzf | awk '{print $1}' |
+    xargs -o -I % kubectl exec -it % -- mongo --host "$HOST" -u "$USER" -p "$PASS" --authenticationDatabase admin

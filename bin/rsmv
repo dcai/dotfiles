@@ -1,0 +1,53 @@
+#!/bin/bash
+# shellcheck disable=SC2181
+if [ "$#" -ne 2 ]; then
+    echo "ERROR: Needs 2 arguments"
+    echo 'For example: rsmv "*.rmvb" /path/to/target'
+    exit 1
+fi
+
+EMAIL='d@tux.im'
+SRC=$1
+DESC=$2
+logfilename="/tmp/rsync-move-$$.txt"
+# read -p "Are you sure you want to move files? " -n 1 -r
+# echo # print a new line
+# if [[ $REPLY != 'y' ]]; then
+# exit
+# fi
+
+newline() {
+    echo ""
+}
+
+touch "${logfilename}"
+echo "Logging at ${logfilename}"
+
+if [[ -f "$SRC" ]] || [[ -d "$SRC" ]]; then
+    read -p "Moving \"$1\", are you sure? (y/n) " -n 1 -r
+    if [[ $REPLY == 'y' ]]; then
+        newline
+        (rsync -ahW --progress --stats --remove-source-files "$SRC" "$DESC") |
+            tee "${logfilename}"
+    fi
+else
+    # rsmv '*.rmvb' /path/to/target
+    echo "WARN: Quote '*' in your command!"
+    # NOTE: Quote the first argument
+    find . -maxdepth 1 -type f -name "$SRC" | sed 's/.\//-\ /g'
+    read -p "Are you sure only moving files listed above? (y/n) " -n 1 -r
+    echo # print a new line
+    if [[ $REPLY == 'y' ]]; then
+        newline
+        find . -maxdepth 1 -type f -name "$SRC" -print0 |
+            rsync -ahW --progress --stats --remove-source-files --files-from=- --from0 ./ "$DESC"
+    fi
+fi
+
+if [ 0 -eq $? ]; then
+    emailsub="[rsync] Moved \"${SRC}\" to \"${DESC}\" @ $(hostname)"
+    tail -n 16 "${logfilename}" | mailgun -s "${emailsub}" -e "${EMAIL}" -f "${logfilename}"
+else
+    echo "Something bad happened, check ${logfilename}"
+fi
+date

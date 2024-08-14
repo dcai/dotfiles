@@ -1,0 +1,29 @@
+#!/bin/bash
+
+. lib.bash
+
+date
+
+up() {
+    dir=$1
+    if [[ -d $dir ]]; then
+        msg "${dir}"
+        cd "$dir" || exit 1
+        if [[ -d "$dir/.git" ]]; then
+            msg "${dir} is git repo 😎"
+            print_and_run_cmd "git stash --include-untracked -q"
+            print_and_run_cmd "git pull --rebase"
+            print_and_run_cmd "git stash pop --quiet"
+        else
+            msg "❌ ${dir} is not a git repo"
+        fi
+    else
+        msg "❌ ${dir} does not exist"
+    fi
+    msg "✅ processed ${dir}"
+    echo
+}
+
+up "$HOME/.dotfiles"
+up "$HOME/.config/nvim"
+up "$HOME/src/vim-snippets"

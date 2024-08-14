@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# CMD='tar -czf'
+CMD='zip -qr'
+# EXT="tar.gz"
+EXT="zip"
+
+if [[ $# -lt 1 ]]; then
+    printf "> This command create .$EXT file\n"
+    printf "> Provide at least one input file\n"
+    exit
+fi
+
+NAME=$(basename "$1")
+
+if [[ "$NAME" == "/" ]]; then
+    NAME="archive-${RANDOM}"
+fi
+
+FILENAME="${NAME}.$EXT"
+
+# if [[ -x "$(command -v pv)" ]]; then
+if which pv >/dev/null; then
+    $CMD - $@ | pv --timer --rate --bytes >"${FILENAME}"
+else
+    $CMD "${FILENAME}" $@
+fi
+
+printf "> $CMD\n"
+printf "> created archive: $FILENAME\n"

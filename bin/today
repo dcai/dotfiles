@@ -1,0 +1,6 @@
+#!/bin/bash
+root="$HOME/Dropbox/Documents/Journal"
+today=$(date +%Y%m%d)
+filename="${today}.org"
+filepath="${root}/${filename}"
+$EDITOR $filepath

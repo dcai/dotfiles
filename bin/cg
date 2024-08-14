@@ -1,0 +1,67 @@
+#!/bin/bash
+
+. lib.bash
+
+#
+# Inspired by uzix's cgvg https://uzix.org/cgvg.html
+#
+# cg: code grep
+# vg: vim grepped
+
+RG_BIN='rg --follow --color never --hidden --no-config'
+AWK_BIN='gawk'
+INDEX_FILE=/tmp/search.list
+CMD_NAME=$(basename "$0")
+
+ARGS=''
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+    -t | --type)
+        ARGS+=" -t $2 "
+        shift
+        shift
+        ;;
+    --no-ignore)
+        ARGS+=' --no-ignore '
+        shift # past argument
+        ;;
+    --debug)
+        ARGS+=' --debug '
+        shift
+        ;;
+    *)                     # unknown option
+        POSITIONAL+=("$1") # save it in an array for later
+        shift              # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+SCRIPTPATH="$(
+    cd "$(dirname "$0")" || exit 1
+    pwd -P
+)"
+
+if [ $# -lt 1 ]; then
+    echo "Usage: ${CMD_NAME} [search_term] --no-ignore"
+    exit 1
+fi
+
+# the `sort` command makes sure the lines are sorted and unique by filename and line number (don't are column number)
+CMD="${RG_BIN} --smart-case --fixed-strings '$*' --vimgrep ${ARGS} | sort --unique --field-separator=: --key=1,2 >$INDEX_FILE"
+print_and_run_cmd "$CMD"
+
+# formatting the awk file, use command:
+#   gawk -o- ./cgvg_parser.awk | pbcopy
+
+cat $INDEX_FILE | $AWK_BIN -f "${SCRIPTPATH}/cgvg_parser.awk" | grep "$1" -i --color
+
+LC=$(wc -l "$INDEX_FILE" | $AWK_BIN '{print $1}')
+if [ "$LC" -gt 0 ]; then
+    msg "found $LC matches"
+else
+    msg "nothing found"
+fi

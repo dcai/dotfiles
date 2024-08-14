@@ -1,0 +1,13 @@
+#!/bin/bash
+# pwdir=${PASSWORD_STORE_DIR-~/.password-store/}
+# stringsize="${#pwdir}"
+# name="$(find "$pwdir" -name "*.gpg" -print | cut -c "$((stringsize + 1))"- | sed -e 's/\(.*\)\.gpg/\1/' | fzf)"
+if [ "$#" -ne 0 ]; then
+    gopass $@
+    exit
+fi
+name="$(gopass ls -f | fzf)"
+
+if [ ! -z "$name" ]; then
+    gopass show -n "$name"
+fi

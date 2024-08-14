@@ -1,0 +1,4 @@
+#!/bin/bash
+kubectl get pods --no-headers $@ |
+    fzf | awk '{print $1}' |
+    xargs -o -I % kubectl exec -it % -- redis-cli

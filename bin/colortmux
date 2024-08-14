@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. lib.bash
+
+color=$(random_hex_color)
+
+# -p pane option
+# -w window option
+# -s sever option
+# -g global session
+# otherwise session option
+tmux set-option -w status-bg "$(random_hex_color)"
+tmux set-option -w status-fg "$(random_hex_color)"

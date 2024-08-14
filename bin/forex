@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# solution #1 with fixer.io
+#curl -s http://api.fixer.io/latest?base=AUD \
+#| jq '.rates | {CNY: .CNY, USD: .USD}'
+
+# solution #2 with xe.com, not working anymore
+# to=${1:-CNY}
+# amount=${2:-100}
+# from=${3:-AUD}
+# url="http://www.xe.com/currencyconverter/convert.cgi?template=crm1&Amount=${amount}&From=${from}&To=${to}"
+# # xargs could trim input
+# curl -s "$url" | grep -i XEenlarge | grep -i h2 |
+#     grep -i "${to}" | sed 's/<[^>]*>//g' | xargs
+
+# solution #3 with floatrates
+url="http://www.floatrates.com/daily/aud.json"
+curl -s "$url" | jq -r '. | "\(.cny.code) \(.cny.rate)\n\(.usd.code) \(.usd.rate)"'

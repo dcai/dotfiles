@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. lib.bash
+
+#
+# LOGFILE="/tmp/download-$$.log"
+# echo "> LOGFILE: $LOGFILE"
+DIR="$(kv get VIDEO_DL_DIR)"
+if [ -z "${DIR}" ]; then
+    DIR="$HOME/Downloads"
+fi
+
+while read -p "> Paste url 🔗 > " -r; do
+    if [[ "$REPLY" == "q" ]]; then
+        exit
+    else
+        CMD="cd $DIR && pwd && yt-dlp '$REPLY' --no-progress --no-check-certificates"
+        print_and_run_tmux_new_window "$CMD"
+        msg "Added to queue ✅"
+    fi
+done

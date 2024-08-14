@@ -1,0 +1,57 @@
+#!/bin/bash
+# code ripper
+#
+# Inspired by uzix's cgvg https://uzix.org/cgvg.html
+
+. lib.bash
+
+RG_BIN='rg --follow --color always --hidden --no-config'
+# AWK_BIN='gawk'
+CMD_NAME=$(basename "$0")
+FZF_BIN='fzf --ansi --exit-0 --select-1 --delimiter : --height 98% --preview-window bottom:20:wrap --preview "preview-vimgrep-line.sh {}" --bind 'ctrl-/:toggle-preview' --bind "enter:become(vim {1} +{2})"'
+
+ARGS=''
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+    -F | --fixed-strings)
+        ARGS+=" -F "
+        shift
+        ;;
+    -t | --type)
+        ARGS+=" -t $2 "
+        shift
+        shift
+        ;;
+    --no-ignore)
+        ARGS+=' --no-ignore '
+        shift # past argument
+        ;;
+    --debug)
+        ARGS+=' --debug '
+        shift
+        ;;
+    *)                     # unknown option
+        POSITIONAL+=("$1") # save it in an array for later
+        shift              # past argument
+        ;;
+    esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ $# -lt 1 ]; then
+    echo "Usage: ${CMD_NAME} [search_term] --no-ignore -t js --debug"
+    exit 1
+fi
+
+RG_CMD="${RG_BIN} -n --smart-case --fixed-strings '$*' --vimgrep ${ARGS} | sort -u  --field-separator=: --key=1,2 | ${FZF_BIN}"
+print_and_run_cmd "$RG_CMD"
+# ARGS=$(eval "$RG_CMD" | ${AWK_BIN} -F: '{print " +"$2 " " $1}')
+#
+# if [[ -n $ARGS ]]; then
+#     VIM_CMD="$EDITOR $ARGS"
+#     print_cmd "$VIM_CMD"
+#     eval "$VIM_CMD"
+# fi

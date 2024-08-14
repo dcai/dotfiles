@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo 'Run: txt2gif.bash filename.txt'
+    exit 1
+fi
+
+INPUT=$1
+OUTPUT="${INPUT}.gif"
+BGCOLOR=xc:black
+BORDERCOLOR='black'
+FONTCOLOR=green
+FONTNAME=Courier
+# FONTNAME=AndaleMono
+FONTSIZE=18
+BORDERSIZE='20x15'
+
+# list colors: convert -list color
+# list fonts: convert -list font
+# Courier New
+# AndaleMono
+# Arial
+
+# reference: http://unix.stackexchange.com/a/249348/7602
+convert -font "${FONTNAME}" -size "10000x5000" "$BGCOLOR" -pointsize "${FONTSIZE}" \
+    -fill "$FONTCOLOR" -annotate +15+15 \
+    "@${INPUT}" \
+    -trim -bordercolor "${BORDERCOLOR}" -border "$BORDERSIZE" +repage -antialias \
+    "${OUTPUT}"

@@ -1,0 +1,6 @@
+fishd.*
+fish_variables
+fish_history.*
+credentials.fish
+config.fish.backup
+conf.d/99-credentials.fish

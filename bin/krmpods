@@ -1,0 +1,4 @@
+#!/bin/bash
+kubectl get pods --no-headers $@ |
+    fzf -m | awk '{print $1}' |
+    xargs -o -I % kubectl delete pods %

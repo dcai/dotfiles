@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# https://github.com/ThePrimeagen/.dotfiles/blob/master/bin/.local/scripts/tmux-sessionizer
+
+. lib.bash
+
+if [[ $# -eq 1 ]]; then
+    dir=$1
+else
+    dir=$(find ~/src ~/green -mindepth 1 -maxdepth 1 -type d | fzf)
+fi
+
+if [[ -z $dir ]]; then
+    exit 0
+fi
+
+sessname=$(basename "$dir" | tr . _)
+tmux_running=$(pgrep tmux)
+port=$(random_port)
+
+cmd="tmux new-session -c '$dir' -s '$sessname' -e 'PORT=$port'"
+
+if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+    eval "$cmd"
+    exit 0
+fi
+
+# when session doesnt exist
+if ! tmux has-session -t="$sessname" 2>/dev/null; then
+    echo 'create a new session'
+    if [[ -z $TMUX ]]; then
+        # not in tmux
+        eval "$cmd"
+    else
+        # when in tmux, start new session deattached
+        # then swtich to client below
+        eval "$cmd -d"
+    fi
+fi
+
+tmux switch-client -t "$sessname"

@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# read -r -d '' CONTENT
+CONTENT=$(tee)
+
+MAILGUN_KEY=$(kv get MAILGUN_KEY)
+MAILGUN_DOMAIN=$(kv get MAILGUN_DOMAIN)
+MAILGUN_FROM=${MAILGUN_POSTMASTER:-d@tux.im}
+
+POSITIONAL=()
+[ "${MAILGUN_KEY}" ] ||
+    {
+        echo "Exiting, mailgun key wasn't set" 1>&2
+        exit 1
+    }
+[ "${MAILGUN_DOMAIN}" ] ||
+    {
+        echo "Exiting, mailgun api base wasn't set" 1>&2
+        exit 2
+    }
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+    -e | --email)
+        TO=$2
+        shift # past argument
+        shift # past value
+        ;;
+    -s | --subject)
+        SUBJECT=$2
+        shift # past argument
+        shift # past value
+        ;;
+    -f | --file)
+        FILE="$2"
+        shift # past argument
+        shift # past value
+        ;;
+    *)                     # unknown option
+        POSITIONAL+=("$1") # save it in an array for later
+        shift              # past argument
+        ;;
+    esac
+done
+
+# echo "email content" | mailgun -s "email subject" -e "sendto@email.tld"
+curl --user "api:${MAILGUN_KEY}" \
+    "https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages" \
+    -F from="${MAILGUN_FROM}" \
+    -F to="${TO}" \
+    -F subject="${SUBJECT:-Hello}" \
+    -F text="${CONTENT}"
+# -F attachment="@${4}"

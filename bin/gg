@@ -1,0 +1,4 @@
+#!/bin/bash
+
+GOOGLEURL="https://www.google.com/complete/search?client=psy-ab&hl=en-AU"
+curl -H 'user-agent: Mozilla/5.0' -sSG --data-urlencode "q=$1" "$GOOGLEURL" | jq -r .[1][][0] | sed -E 's#</?b>##g'

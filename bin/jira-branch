@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# based on https://seb.jambor.dev/posts/improving-shell-workflows-with-fzf/
+# Get API token from https://id.atlassian.com/manage-profile/security/api-tokens
+
+PROFILE=${1-DEFAULT}
+
+# convert profile name to upper case
+PROFILE=$(echo "$PROFILE" | tr "[:lower:]" "[:upper:]")
+
+URLKEY=JIRA_${PROFILE}_URL
+USERKEY=JIRA_${PROFILE}_USER
+PASSKEY=JIRA_${PROFILE}_PASS
+COOKIEKEY=JIRA_${PROFILE}_COOKIE
+JIRA_BASEURL=$(kv get "$URLKEY")
+JIRA_USER=$(kv get "$USERKEY")
+JIRA_PASS=$(kv get "$PASSKEY")
+JIRA_COOKIE=$(kv get "$COOKIEKEY")
+
+if [ -z "$JIRA_BASEURL" ]; then
+    echo "ERROR: Define JIRA base url environment var: ${URLKEY}"
+    exit 1
+fi
+
+if [ "$JIRA_BRANCH_USE_COOKIE" = "true" ]; then
+    if [ -z "$JIRA_COOKIE" ]; then
+        echo "ERROR: Define JIRA cookie var: ${COOKIEKEY}"
+        exit 1
+    fi
+else
+    if [ -z "$JIRA_USER" ]; then
+        echo "ERROR: Define JIRA user environment var: ${USERKEY}"
+        exit 1
+    fi
+
+    if [ -z "$JIRA_PASS" ]; then
+        echo "ERROR: Define JIRA pass environment var: ${PASSKEY}"
+        exit 1
+    fi
+
+fi
+
+JIRA_API_SEARCH="${JIRA_BASEURL}/rest/api/2/search"
+JIRA_API_MYSELF="${JIRA_BASEURL}/rest/api/3/myself"
+
+if [ "$2" = "test" ]; then
+    CMD="curl --url $JIRA_API_MYSELF --user '$JIRA_USER:$JIRA_PASS' -s"
+    eval "$CMD" | jq
+    exit 0
+fi
+
+# slugify ticket number and summary, this is more generic
+Slugify() {
+    read -r string
+    echo "$string" |
+        iconv -t ascii//TRANSLIT |
+        sed -E 's/[~\^]+//g' |
+        sed -E 's/[^a-zA-Z0-9]+/-/g' |
+        sed -E 's/^-+\|-+$//g' |
+        sed -E 's/^-+//g' |
+        sed -E 's/-+$//g' |
+        tr "[:upper:]" "[:lower:]"
+}
+
+# Normalize number and summary, this specific to the fzf output
+NormalizeName() {
+    lcoal AWKDELIMITER="SSSSSSS"
+    read -r string
+    echo "$string" | sed -e "s/: /$AWKDELIMITER/" -e 's/[^a-zA-Z0-9\t]/-/g' |
+        tr -s '-' |
+        awk -F "$AWKDELIMITER" 'function trim(s){ gsub(/^[ \t\r\n-]+|[ \t\r\n-]+$/, "", s); return s } {printf "%s/%s", $1, tolower(trim($2))}'
+}
+
+JQ_QUERY=$(
+    cat <<EOF
+"\(.key): \(.fields.summary)\t
+\(.key): \(.fields.summary)
+Status: \(.fields.status.name)
+Reporter: \(.fields.reporter.displayName)
+Created: \(.fields.created)
+Updated: \(.fields.updated)
+Labels: \(.fields.labels | join(", "))
+
+=======================================================
+
+\(.fields.description)
+
+=======================================================
+
+\(.fields.comment.comments | map(.author.displayName + ": " + .body) | join("\n\n\n"))
+"
+EOF
+)
+
+JQL='resolution = Unresolved AND assignee = currentUser()'
+
+POSTBODY=$(
+    cat <<EOF
+{
+  "jql": "$JQL",
+  "fields": [
+    "assignee", "created", "comment", "description", "labels", "reporter", "status", "summary", "updated"
+  ]
+}
+EOF
+)
+
+CURL_SEARCH_CMD=$(
+    cat <<EOF
+curl --url $JIRA_API_SEARCH --user '$JIRA_USER:$JIRA_PASS' --compressed -X POST -s \
+  -H 'X-Atlassian-Token: no-check' -H 'Content-Type: application/json' \
+  --data '$POSTBODY'
+EOF
+)
+
+if [ "$JIRA_BRANCH_USE_COOKIE" = "true" ]; then
+    CURL_SEARCH_CMD=$(
+        cat <<EOF
+curl --url $JIRA_API_SEARCH -H 'Cookie: ${JIRA_COOKIE}' --compressed -X POST -s \
+  -H 'X-Atlassian-Token: no-check' -H 'Content-Type: application/json' \
+  --data '$POSTBODY'
+EOF
+    )
+fi
+
+# echo "$CURL_SEARCH_CMD"
+
+BRANCH_NAME=$(
+    eval "$CURL_SEARCH_CMD" | jq ".issues[] | $JQ_QUERY" |
+        sed -e 's/"\(.*\)"/\1/' -e 's/\\t/\t/' |
+        fzf --with-nth=1 --delimiter='\t' --preview='echo -e {2}' --preview-window=right:wrap |
+        cut -f1 | Slugify
+)
+
+BRANCH_NAME=$(printf "%.66s" "$BRANCH_NAME")
+IN_GIT_REPO="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
+
+BRANCH_PREFIX='feature/'
+
+if [ -n "$BRANCH_NAME" ]; then
+    echo "> Using git branch name [$BRANCH_NAME]"
+    if [ "$IN_GIT_REPO" ]; then
+        REMOTE_HEAD=$(git symbolic-ref --short refs/remotes/origin/HEAD)
+        if [ $(git branch --list "${BRANCH_PREFIX}${BRANCH_NAME}") ]; then
+            git checkout "${BRANCH_PREFIX}${BRANCH_NAME}"
+        else
+            git checkout -b "${BRANCH_PREFIX}${BRANCH_NAME}" "$REMOTE_HEAD"
+        fi
+    else
+        echo "> $(pwd) Not a git repo, aborted"
+    fi
+fi

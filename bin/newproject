@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. lib.bash
+
+project=$(randname)
+echo "creating project: ${project}"
+
+dir="$HOME/src/${project}"
+mkdir -p "$dir"
+
+sessionizer "$dir"

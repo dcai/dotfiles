@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo 'Use arguments: {type} {name}'
+    exit
+fi
+
+type=$1
+name=$2
+
+MSG="=> PHP Searching"
+FILETMP="$HOME/.local/phprg.tmp"
+BINRG="$(which rg) --vimgrep"
+
+case $type in
+cd)
+    # echo "$MSG class [$name] def"
+    CMD="$BINRG 'class\s+\w*$name\w*' | tee $FILETMP"
+    ;;
+fd)
+    # echo "$MSG function [$name] def"
+    CMD="$BINRG '^function\s+$name\s*\(' | tee $FILETMP"
+    ;;
+md)
+    # echo "$MSG class method [$name] def"
+    CMD="$BINRG '\s+function\s+$name\s*\(' | tee $FILETMP"
+    ;;
+fu)
+    # echo "$MSG function [$name] usages"
+    CMD="$BINRG '\s+$name\(' | grep -v function | tee $FILETMP"
+    ;;
+mu)
+    # echo "$MSG function [$name] usages"
+    CMD="$BINRG '\->$name\(' | tee $FILETMP"
+    ;;
+*)
+    # echo "$MSG anything"
+    CMD="$BINRG $1"
+    ;;
+esac
+
+# echo $CMD
+eval $CMD |
+    fzf --ansi |
+    awk -F ":" '{print "vim " $1 " +" $2}' |
+    xargs -o -I %CMD% sh -c %CMD%

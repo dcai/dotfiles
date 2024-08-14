@@ -1,0 +1,10 @@
+#!/bin/bash
+CMD_NAME=$(basename "$0")
+
+if [ $# -ne 1 ]; then
+    echo "Usage: ${CMD_NAME} executive_file"
+    exit 1
+fi
+
+
+vim $(which "$1")

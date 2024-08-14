@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo 'Use arguments: {type} {name}'
+    exit
+fi
+
+term=$1
+BINRG="$(which rg) --vimgrep"
+FILETMP="$HOME/.local/fzfrg.tmp"
+CMD="$BINRG '$term' | tee $FILETMP"
+
+eval $CMD |
+    fzf --ansi --print0 |
+    awk -F ":" '{print "vim " $1 " +" $2}' |
+    xargs -o -I %CMD% sh -c %CMD%

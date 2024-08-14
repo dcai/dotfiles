@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. lib.bash
+
+random_hex_color

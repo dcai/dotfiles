@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. lib.bash
+
+# ROOT=$(git rev-parse --show-toplevel)
+# PACKAGEJSON=$ROOT/package.json
+#
+ROOT=$(find_project_root "package.json")
+
+if [[ -n $ROOT ]]; then
+    echo "$ROOT"
+    echo
+    msg "Found package.json in $ROOT"
+    echo
+    PACKAGEJSON=$ROOT/package.json
+    # jq -r '.scripts | to_entries[] | "\(.key) : \"\(.value)\""' "${PACKAGEJSON}"
+    jq '.scripts' "${PACKAGEJSON}"
+else
+    msg "No project root with package.json found"
+    exit 1
+fi

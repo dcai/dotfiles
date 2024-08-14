@@ -1,0 +1,108 @@
+# vi: ft=bash
+GIT_COMMITTER_DATE="10 July 2022 16:31:01" git commit --date $GIT_COMMITTER_DATE --amend --no-edit
+GIT_COMMITTER_DATE="10 July 2022 16:31:01" git commit --date $GIT_COMMITTER_DATE --no-verify --fixup HEAD
+GIT_COMMITTER_DATE="10 July 2022 16:31:01" git commit --date $GIT_COMMITTER_DATE -am "commit message"
+GIT_SEQUENCE_EDITOR=true git rebase --committer-date-is-author-date --autosquash -i origin/main
+az account list --query "[?user.name=='dcai@outlook.com.au'].{Name:name, ID:id, Default:isDefault}" --output Table
+cat package.json | jq '.dependencies|keys[]'
+cat package.json | jq '.scripts | to_entries | .[] | "\(.key) = \(.value)"'
+cat ~/.ssh/id_rsa.pub | ssh user@machine "mkdir ~/.ssh; cat >> ~/.ssh/authorized_keys" # copy key to remote
+ctags -R --languages=php --exclude=".git" --exclude="node_modules" --exclude="vendor" --exclude="tests"
+docker container ls -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}' | fzf | gawk -F '\t' '{print $1}' | xargs -o -I % docker exec -it % bash
+docker container ls -a --format '{{.Image}},{{.Names}}' |fzf --multi| gawk -F , '{print $2}' | xargs docker rm
+docker container prune --filter "until=24h"
+docker exec -i mariadb-1 sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < all-databases.sql
+docker exec -i mongo-airnotifier sh -c 'mongorestore --archive' < mongo.archive
+docker exec -it mariadb-1 mysql
+docker exec -it mongo-1 mongosh
+docker exec -it redis-1 redis-cli
+docker exec mariadb-1 sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > all-databases.sql
+docker image prune -a
+docker images | fzf --multi | gawk '{print $3}' | xargs docker rmi
+docker kill (docker ps | fzf | awk '{print $1}')
+docker run --name caddy-1 --rm -p 2019:2019 -v "$PWD":/etc/caddy caddy:2.8-alpine
+docker run --name apache-php-1 --rm -p 8002:80 -v "$PWD":/var/www/html php:7.2-apache
+docker run --name dev --rm -it --privileged -v $HOME/.dotfiles:/root/.dotfiles -v $HOME/.config/nvim:/root/.config/nvim -v $HOME/.local/docker/dev/local:/root/.local dcai/dev
+docker run --name kube-1 -it --privileged -v $HOME/.local/docker/kube:/root dcai/kube:latest
+docker run --name mariadb-1 --rm  -p 3306:3306 -v $HOME/.local/docker/mariadb/data:/var/lib/mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_PASSWORD=root mariadb:latest --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+docker run --name mongo-1 --rm -p 27017:27017 -v $HOME/.local/docker/mongo/data:/data/db -v $HOME/.local/docker/mongo/etc:/etc/mongo mongo:latest --config /etc/mongo/mongod.conf
+docker run --name mpos-1 -it --privileged mposapi:latest sh
+docker run --name mssql-1 --rm -p 1433:1433 -e "ACCEPT_EULA=1" -e "MSSQL_SA_PASSWORD=p@ssw0rd" -e "MSSQL_PID=Developer" -e "MSSQL_USER=SA"  -v "$HOME/.local/docker/mssql":/var/opt/mssql/data mcr.microsoft.com/azure-sql-edge
+docker run --name nginx-1 --rm -p 8001:80 -v "$PWD":/usr/share/nginx/html nginx
+docker run --name nix-1 --rm -e NIX_CONFIG='filter-syscalls = false' -v $HOME/src/nixpkgs:/nixpkgs -it ghcr.io/nixos/nix
+docker run --name pgadmin4-1 --rm -p 5050:80 -v $HOME/.local/docker/pgadmin4:/var/lib/pgadmin -e 'PGADMIN_DEFAULT_EMAIL=admin@tux.im' -e 'PGADMIN_DEFAULT_PASSWORD=password' dpage/pgadmin4
+docker run --name postgres-1 --rm -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e PGDATA=/pgdata -e POSTGRES_HOST_AUTH_METHOD=trust -v $HOME/.local/docker/postgres:/pgdata postgres:16-alpine
+docker run --name qmk-1 --rm -it -v $HOME/src/qmk_firmware:/opt/qmk qmkfm/qmk_cli bash
+docker run --name redis-1 --rm -p 6379:6379 -v $HOME/.local/docker/redis/data/:/data/ -v $HOME/.local/docker/redis/etc:/etc/redis redis:latest redis-server /etc/redis/redis.conf
+doctl kubernetes cluster kubeconfig save nuwa
+du -sh ./node_modules/* | sort -nr
+echo -n test_string | base64
+fd -e js -e jsx -e ts -e tsx -0 | xargs -0 gsed  -i "s/test1111/test/g"
+fd -e json -0 | xargs -0 gsed  -i "s/search_for/replaced/g"
+fd -e yaml -e yml -0 | xargs -0 gsed  -i "s/search_for/replaced/g"
+find ./ -type f -iname '*.js' -exec gsed -i 's/search_for/replaced/g' {} \;
+find ./ -type f -iname '*.jsx' -print0 | xargs -0 gsed -i "s/search_for/replaced/g"
+gcloud compute disks create webserver-ssd-2 --source-snapshot sxu5ngi6bpkm --type pd-ssd --zone us-west1-b
+gcloud compute disks snapshot webserver --zone us-west1-b
+gcloud compute instances attach-disk webserver --disk webserver-ssd-2 --zone us-west1-b
+gcloud compute instances create webserver --zone=us-west1-b --machine-type=g1-small --subnet=default --network-tier=PREMIUM --metadata startup-script-url=https://gitlab.com/dcai/code/snippets/1969961/raw --preemptible --image=ubuntu-1804-bionic-v20200414 --image-project=ubuntu-os-cloud --boot-disk-size=10GB --boot-disk-type=pd-ssd --boot-disk-device-name=webserver-ssd --tags=http-server,https-server
+gcloud compute instances delete webserver --zone=us-west1-b
+gcloud compute scp ~/index.html webserver:~/index.html --zone=us-west1-b
+gcloud compute snapshots list
+gcloud config set account dcai@woolworths.com.au
+gcloud config set account heydcai@gmail.com
+gcloud container clusters create pangu --preemptible --num-nodes=3 --zone "asia-east1-c" --machine-type "e2-small"
+gcloud container clusters get-credentials pangu
+git remote set-head origin rc/22.15
+git shortlog -sn
+git grep --name-only '/////' | xargs -I %  gsed -i '/\/\/\/\/\//d' % # delete lines with marker `/////`
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=OUTPUT.pdf -c .setpdfwrite -f INPUT.pdf # remove pdf limit
+helm list --tiller-namespace=sca-infra
+history | gawk '{print $1}' | sort | uniq -c | sort -nr | head -20
+ifconfig | convert label:@- ip.png # save output as picture
+journalctl -m --vacuum-time=1s
+killall 'Google Chrome'
+killall Dock
+killall NotificationCenter
+kube-project.bash dong.cai@scadigital.com.au sca-abnormally-pro-stingray "australia-southeast1-a" nonprod-good-dog # sca myradio dev
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl create job --from=cronjob/pgdump pgdump-manual-001
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl exec mongodb-mongodb-replicaset-0 -- mongo --quiet --eval="printjson(rs.isMaster())"
+kubectl exec mongodb-mongodb-replicaset-0 -- mongo test --quiet --eval="printjson(db.test.insert({key1: 'value1'}))" --authenticationDatabase "admin" -u "admin" -p "admin"
+kubectl expose rc hello --type=LoadBalancer --name hello-http
+kubectl get pods --namespace kube-system
+kubectl port-forward hello-rzg66 4001:4000
+kubectl run --rm -i --tty --env ETCDCTL_API=3 etcd-test --image quay.io/coreos/etcd --restart=Never -- /bin/sh # etcdctl
+kubectl run hello --image=dcai/hello --port=4000 --generator=run/v1
+kubectl scale rc hello --replicas=3
+lsof -P -i -n # list active internet connections
+lsof -i "tcp:8000" -sTCP:LISTEN # who is listening on 8000
+mongo airnotifier --eval "db.getCollectionNames().forEach(function(collection) {db[collection].getIndexes().forEach(function(i) {print(collection + ':' + i.name);});});" --quiet
+mongo airnotifier --eval "printjson(db.getCollectionNames())" --quiet
+mongodump --gzip --archive=mongo.archive.gz
+mongorestore --gzip --archive=mongo.archive.gz
+mount | column -t
+npm i -D eslint-config-prettier prettier eslint-plugin-prettier babel-eslint eslint-plugin-node prettier-eslint babel-eslint
+npx install-peerdeps --dev eslint-config-airbnb-base
+phpcbf --standard=PSR2
+phpcbf --standard=~/src/moodle/local/codechecker/moodle
+phpcs --standard=PSR2
+phpcs --standard=~/src/moodle/local/codechecker/moodle
+python -m SimpleHTTPServer 8080
+python3 -m http.server 8080 --bind 0.0.0.0
+rg --fixed-strings 'jQuery' -l | xargs -I % gsed -i 's/jQuery/React/g' % # mac's sed must use `sed -i ""` or just use gsed
+rg --type-list
+rg -tpy --files # find all python files
+gsed -i -e 's/fea/asd/g' hello.txt
+shfmt -w .
+ssh -D 1080 -C -N tux.im # ssh tunnel
+sysctl -n machdep.cpu.brand_string # mac cpu model
+tmux suspend-client -t (tmux list-clients | fzf | gawk 'BEGIN { FS = ":" };{print $1}')
+vim +PlugInstall +qall
+vim +PlugUpdate +qall
+wajig large | less
+wajig listinstalled
+xrandr --output LVDS1 --mode 1600x900 --output HDMI1 --mode 1920x1080 --right-of LVDS1 # set resolution
+yo @friendlyrobot/express-app
+yo @friendlyrobot/react-app test-react-app
